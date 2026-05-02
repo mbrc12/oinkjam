@@ -1,5 +1,6 @@
 ---@enum (key) Sprite
 local sprites = {
+    parachute = { idx = 16, w = 1, h = 1 },
     dirt_monster = { idx = 64, w = 2, h = 2 },
 }
 
@@ -14,6 +15,8 @@ function sprite(name, x, y)
         print("Sprite '" .. name .. "' not found")
     end
     if item then
-        spr(item.idx, x, y, item.w * 8, item.h * 8)
+        local w = item.w or 1
+        local h = item.h or 1
+        spr(item.idx, x, y, w, h)
     end
 end

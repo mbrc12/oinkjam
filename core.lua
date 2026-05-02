@@ -10,6 +10,5 @@ function _update()
 end
 
 function _draw()
-    cls()
-    sprite("dirt_monster", pos.x, pos.y)
+    sprite("parachute", pos.x, pos.y)
 end
