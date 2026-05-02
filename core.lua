@@ -2,6 +2,7 @@ pos = Vec2:new()
 speed = 50
 DT = 1 / 30
 
+floor_y = 90
 
 function _update()
     local dir = direction()
@@ -10,5 +11,7 @@ function _update()
 end
 
 function _draw()
-    sprite("parachute", pos.x, pos.y)
+    cls(0)
+    rectfill(0, floor_y, 128, 128, 5)
+    sprite("moon", 100, 20)
 end

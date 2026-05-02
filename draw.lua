@@ -1,6 +1,10 @@
 ---@enum (key) Sprite
 local sprites = {
-    parachute = { idx = 16, w = 1, h = 1 },
+    cloud_1 = { idx = 48 },
+    cloud_2 = { idx = 49 },
+    moon = { idx = 32 },
+
+    parachute = { idx = 16 },
     dirt_monster = { idx = 64, w = 2, h = 2 },
 }
 
