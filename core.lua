@@ -1,6 +1,6 @@
 pos = Vec2:new()
 speed = 50
-DT = 1/30
+DT = 1 / 30
 
 
 function _update()
