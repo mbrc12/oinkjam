@@ -10,9 +10,18 @@ function prettytable(t)
     return str
 end
 
+function zeropad(num, len)
+    len = len or 2
+    local str = tostr(num)
+    while #str < len do
+        str = "0" .. str
+    end
+    return str
+end
+
 function dbg(...)
     local args = { ... }
-    local str = ""
+    local str = "[" .. zeropad(stat(83)) .. ":" .. zeropad(stat(84)) .. ":" .. zeropad(stat(85)) .. "] "
     for _, v in ipairs(args) do
         if type(v) == "table" then
             str = str .. prettytable(v) .. ";"

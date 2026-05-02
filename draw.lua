@@ -6,7 +6,7 @@ local sprites = {
 ---@param name Sprite
 ---@param x number
 ---@param y number
-function draw(name, x, y)
+function sprite(name, x, y)
     local item = sprites[name]
     x = round(x)
     y = round(y)

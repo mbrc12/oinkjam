@@ -11,5 +11,5 @@ end
 
 function _draw()
     cls()
-    draw("dirt_monster", pos.x, pos.y)
+    sprite("dirt_monster", pos.x, pos.y)
 end
