@@ -1,5 +1,13 @@
 --- copied from https://github.com/kikito/hit.p8/blob/main/hit.lua
 
+---@class HitResult
+---@field t number time of collision between 0 and 1, or negative if already intersect
+---field nx number collision normal x, either -1, 0 or 1
+---@field ny number collision normal y, either -1, 0 or 1
+---@field tx number collision x coordinate
+---@field ty number collision y coordinate
+---@field intersect boolean true if aabb1 and aabb2 are already intersecting
+
 ---@param x1    number  aabb1 left edge
 ---@param y1    number  aabb1 top edge
 ---@param w1    number  aabb1 width
@@ -10,13 +18,7 @@
 ---@param h2    number  aabb2 height
 ---@param goalx number  aabb1 destination x
 ---@param goaly number  aabb1 destination y
----
----@return number?  t          collision time (0..1)
----@return number?  nx         contact normal x (-1, 0, or 1)
----@return number?  ny         contact normal y (-1, 0, or 1)
----@return number?  tx         touch point x (corrected position)
----@return number?  ty         touch point y (corrected position)
----@return boolean?  intersect  true if aabbs are currently overlapping
+---@return HitResult? nil if no collision, or a table with collision info
 function hit(x1,y1,w1,h1, x2,y2,w2,h2, goalx, goaly)
   -- minkowsky difference between 2 aabbs, which is another aabb
   local x,y,w,h=x2-x1-w1,y2-y1-h1,w1+w2,h1+h2
@@ -41,7 +43,7 @@ function hit(x1,y1,w1,h1, x2,y2,w2,h2, goalx, goaly)
     nx=px>0 and 1 or px<0 and -1 or 0
     ny=py>0 and 1 or py<0 and -1 or 0
     tx,ty=x1+px,y1+py
-    return t,nx,ny,tx,ty,true
+    return {t = t, nx = nx, ny = ny, tx = tx, ty = ty, intersect = true}
   end
 
   -- no intersection, or intersection with movement
@@ -93,5 +95,5 @@ function hit(x1,y1,w1,h1, x2,y2,w2,h2, goalx, goaly)
   tx=nx<0 and x2-w1 or nx>0 and x2+w2 or x1+dx*t
   ty=ny<0 and y2-h1 or ny>0 and y2+h2 or y1+dy*t
 
-  return t,nx,ny,tx,ty,intersect
+  return {t = t, nx = nx,ny = ny,tx = tx, ty = ty, intersect = intersect}
 end
