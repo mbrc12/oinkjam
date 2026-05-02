@@ -1,0 +1,47 @@
+{
+    "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/refs/heads/master/setting/schema.json",
+    "runtime.version": "LuaJIT",
+    "diagnostics.disable": [
+		"lowercase-global",
+		"undefined-doc-name",
+		"err-esc"
+    ],
+    "hint.enable": true,
+    "semantic.enable": false,
+    "workspace.library": [
+        "/Users/subwave/dev/ext/pico8-definitions/library/"
+    ],
+	"runtime.nonstandardSymbol": [
+		"!=",
+		"+=",
+		"-=",
+		"*=",
+		"/=",
+		"%=",
+		"^=",
+		"|=",
+		"&=",
+		"<<=",
+		">>=",
+		"//"
+	],
+	"runtime.builtin": {
+		"basic": "disable",
+		"bit": "disable",
+		"bit32": "disable",
+		"builtin": "disable",
+		"coroutine": "disable",
+		"debug": "disable",
+		"ffi": "disable",
+		"io": "disable",
+		"jit": "disable",
+		"math": "disable",
+		"os": "disable",
+		"package": "disable",
+		"string": "disable",
+		"table": "disable",
+		"table.clear": "disable",
+		"table.new": "disable",
+		"utf8": "disable"
+	}
+}
