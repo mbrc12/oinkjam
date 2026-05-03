@@ -32,6 +32,9 @@ player = {
     last_jump_asked = 0,
     last_grounded = 0,
 
+    hp = 15,
+    max_hp = 20,
+
     -- never touched
     w = 8,
     h = 4,
@@ -102,21 +105,19 @@ end
 function _update()
     update_buildings()
     update_player()
+    player.hp = max(0, player.hp - 0.01)
 end
+
+------
 
 function _draw()
     camera_move(player.x - 20, 1)
 
     cls(0)
 
-    local msg = "x: " .. round(player.x) .. " y: " .. round(player.y) .. " "
-    local time_since_grounded = time() - player.last_grounded
-    msg = msg .. "g:" .. (player.grounded and "t" or "f") .. " gt: " .. round(time_since_grounded) / 100 .. " "
-    msg = msg .. " bc: " .. #buildings
-    print(msg, 1, 1, 7)
-
     line(0, floor_y, infty, floor_y, 5)
     sprite("moon", 100, 20)
+
 
     camera_enable(1)
 
@@ -133,14 +134,53 @@ function _draw()
     if abs(player.vx) < epsilon then
         sprite("player", player.x, player.y, player.flip)
     else
-        -- if player.grounded then
         anim("player_run", t, 20 + get_camera(1), player.y, player.flip)
-        -- else
-        --     sprite("player_jump", player.x, player.y, player.flip)
-        -- end
     end
 
     -- physics:draw()
 
     camera()
+
+    draw_sludge()
+    draw_hp()
+
+    draw_msg()
+end
+
+function draw_hp()
+    local hp_h = 4
+    local hp_w = 50
+    local hp_x = 2
+    local hp_y = hp_x
+    local l = player.hp / player.max_hp * hp_w
+    rectfill(hp_x, hp_y, hp_x + l, hp_y + hp_h, 8)
+    rect(hp_x, hp_y, hp_x + hp_w, hp_y + hp_h, 2)
+end
+
+
+function draw_sludge()
+    local sludge_color = 5
+
+    local wavelength = { 120, 80 }
+    local period = { 5, 3 }
+    local amp = { 3, 1.5 }
+
+    for x = 0, 128 do
+        local lx = x + player.x
+        local val = 0
+        for i = 1, 2 do
+            local cur = sin(2 * 3.14 * (lx/wavelength[i] - time() / period[i]))
+            val = val + (1 + cur) * amp[i]
+        end
+        local y = flr(val/3)
+        line(x, floor_y - y, x, 128, sludge_color)
+    end
+end
+
+function draw_msg()
+    local msg = "x: " .. round(player.x) .. " y: " .. round(player.y) .. " "
+    local time_since_grounded = time() - player.last_grounded
+    msg = msg .. "g:" .. (player.grounded and "t" or "f") .. " gt: " .. round(time_since_grounded) / 100 .. " "
+    -- msg = msg .. " bc: " .. #buildings
+    print(msg, 2, 128-8, 0)
 end

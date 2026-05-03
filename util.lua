@@ -65,6 +65,13 @@ function rand_geom(p)
     return cnt
 end
 
+---@param a number
+---@param b number
+---@return number
+function rand_int(a, b)
+    return flr(rnd(b - a + 1)) + a
+end
+
 --------------------------------------
 
 ---@class Vec2
