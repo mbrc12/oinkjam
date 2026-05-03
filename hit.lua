@@ -2,7 +2,7 @@
 
 ---@class HitResult
 ---@field t number time of collision between 0 and 1, or negative if already intersect
----field nx number normal x, either -1, 0 or 1
+---@field nx number normal x, either -1, 0 or 1
 ---@field ny number normal y, either -1, 0 or 1
 ---@field tx number moved x coordinate
 ---@field ty number moved y coordinate

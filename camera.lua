@@ -37,13 +37,17 @@ function camera_move(x, n)
     local cam = cameras[n]
     -- cam.x = cam.x + (x - cam.x) * camera_speed
     cam.x = round(x)
-    if cam.x > camera_reset_threshold then
-        cam.x -= camera_reset_threshold
-        for entity, _ in pairs(cam.entities) do
-            entity.x -= camera_reset_threshold
-        end
-        next_building_x -= camera_reset_threshold
+    if cam.x < camera_reset_threshold then
+        return
     end
+
+    -- logic to reset camera and all entities positions to avoid precision issues
+    cam.x -= camera_reset_threshold
+    for entity, _ in pairs(cam.entities) do
+        entity.x -= camera_reset_threshold
+    end
+    next_building_x -= camera_reset_threshold
+    physics:rebuild()
 end
 
 ---@param n? number camera layer

@@ -2,6 +2,7 @@ pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
 #include hit.lua
+#include physics.lua
 #include util.lua
 #include draw.lua
 #include input.lua

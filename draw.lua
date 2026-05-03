@@ -1,6 +1,7 @@
 ---@enum (key) Sprite
 local sprites = {
     player = { idx = 1 },
+    player_jump = { idx = 2 },
 
     cloud_1 = { idx = 48 },
     cloud_2 = { idx = 49 },
@@ -18,7 +19,8 @@ local anims = {
 ---@param name Sprite
 ---@param x number
 ---@param y number
-function sprite(name, x, y)
+---@param flipx? boolean
+function sprite(name, x, y, flipx)
     local item = sprites[name]
     x = round(x)
     y = round(y)
@@ -28,7 +30,7 @@ function sprite(name, x, y)
     end
     local w = item.w or 1
     local h = item.h or 1
-    spr(item.idx, x, y, w, h)
+    spr(item.idx, x, y, w, h, flipx or false, false)
 end
 
 
@@ -36,7 +38,8 @@ end
 ---@param t number
 ---@param x number
 ---@param y number
-function anim(name, t, x, y)
+---@param flipx? boolean
+function anim(name, t, x, y, flipx)
     local item = anims[name]
     x = round(x)
     y = round(y)
@@ -47,5 +50,5 @@ function anim(name, t, x, y)
     local idx = item.idxs[frame]
     local w = item.w or 1
     local h = item.h or 1
-    spr(idx, x, y, w, h)
+    spr(idx, x, y, w, h, flipx or false, false)
 end

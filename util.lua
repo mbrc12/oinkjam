@@ -65,7 +65,7 @@ function rand_geom(p)
     return cnt
 end
 
----------------------------------------
+--------------------------------------
 
 ---@class Vec2
 Vec2 = { x = 0, y = 0 }
@@ -116,4 +116,16 @@ end
 ---@return number
 function Vec2:len()
     return sqrt(self.x * self.x + self.y * self.y)
+end
+
+---------------------------------------
+
+---@param t table
+---@return number
+function mapsize(t)
+    local count = 0
+    for _, _ in pairs(t) do
+        count = count + 1
+    end
+    return count
 end
