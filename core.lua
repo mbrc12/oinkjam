@@ -1,6 +1,6 @@
 infty = 16000 -- allow 2xinfty
 delta_t = 1 / 60
-player_speed = 50
+player_speed = 80
 gravity = 400
 epsilon = 0.0001
 moon_x = 100
@@ -11,7 +11,6 @@ max_building_height_diff = 10
 flat_building_chance = 0.3
 
 jump_forgive_time = 0.1
-coyote_time = 0.1
 jump_velocity = 150
 
 floor_y = 100
@@ -33,6 +32,7 @@ player = {
 
     last_jump_asked = -100,
     last_grounded = -100,
+    jumps = 0,
 
     hp = 15,
     max_hp = 20,
@@ -71,32 +71,40 @@ function minimal_collision(x, y, w, h, x2, y2)
 end
 
 function update_player()
+    input_update()
     physics:del(player)
+
+    local dir = direction()
+
+    local just_jumped = isjustdown("interact") or isjustdown("up")
+    local pressing_jump = isdown("interact") or isdown("up")
 
     local local_gravity = gravity
 
-    if isdown("interact") or isdown("up") then
+    if just_jumped then
         player.last_jump_asked = time()
-    else
+    end
+    if not pressing_jump then
         local_gravity = gravity * 2
     end
 
-    local dir = direction()
     player.vy = min(200, player.vy + local_gravity * delta_t)
     player.vx = dir.x * player_speed
 
-
-    if time() - player.last_jump_asked < jump_forgive_time and
-        time() - player.last_grounded < coyote_time then
+    if time() - player.last_jump_asked < jump_forgive_time and player.jumps > 0 then
+        player.last_jump_asked = -100
         player.vy = -jump_velocity
+        player.jumps -= 1
     end
 
     --- do collision in two steps to allow sliding on walls
     local x2, y2 = player.x + player.vx * delta_t, player.y + player.vy * delta_t
     local sx, sy = minimal_collision(player.x, player.y, player.w, player.h, x2, player.y)
     local sx2, sy2 = minimal_collision(sx, sy, player.w, player.h, sx, y2)
+    
     if player.vy > 0 and abs(sy2 - player.y) < epsilon then
         player.grounded = true
+        player.jumps = 2
         player.last_grounded = time()
     else
         player.grounded = false
@@ -128,7 +136,8 @@ function update_bullets()
         local moon_pos = Vec2:new(moon_x + camera_offset(1) + 4, moon_y + 4)
         local px, py = player_center()
         local dir = Vec2:new(px - moon_pos.x, py - moon_pos.y)
-        dir:scl(1 / (dir:len() + epsilon)):clip(1)
+        -- dir:scl(1 / (dir:len() + epsilon)):clip(1)
+        dir:scl(1/100)
         local bullet_speed = 50
         local bullet = {
             x = moon_pos.x,
@@ -141,6 +150,7 @@ function update_bullets()
             show_time = 0.1,
             color = 8,
         }
+        dbg(bullet)
 
         bullets[bullet] = true
         camera_register_entity(bullet, 1)
@@ -157,7 +167,6 @@ function update_bullets()
 
         b.elapsed = b.elapsed + delta_t
         local x2, y2 = b.x + b.vx * delta_t, b.y + b.vy * delta_t
-        x2, y2 = round(x2), round(y2)
         local done = false
         local injure = false
         physics:query(b.x, b.y, b.w, b.h, x2, y2, function(other, _)
@@ -248,7 +257,8 @@ function _draw()
 
     for b, _ in pairs(bullets) do
         if b.elapsed > b.show_time then
-            pset(b.x, b.y, b.color)
+            local bx, by = round(b.x), round(b.y)
+            pset(bx, by, b.color)
         end
     end
 
@@ -281,14 +291,14 @@ end
 function draw_sludge()
     local sludge_color = 5
 
-    local wavelength = { 120, 80 }
-    local period = { 5, 3 }
-    local amp = { 3, 1.5 }
+    local wavelength = { 600, 120, 80 }
+    local period = { 17, 7, 3 }
+    local amp = { 5, 3, 1.5 }
 
     for x = 0, 128 do
         local lx = x + camera_offset(1)
         local val = 0
-        for i = 1, 2 do
+        for i = 1, #wavelength do
             local cur = sin(2 * 3.14 * (lx / wavelength[i] - time() / period[i]))
             val = val + (1 + cur) * amp[i]
         end
@@ -298,11 +308,17 @@ function draw_sludge()
 end
 
 function draw_msg()
-    local msg = "x: " .. round(player.x)
+    local msg = "" .. round(player.x)
     -- local time_since_grounded = time() - player.last_grounded
     -- msg = msg .. "g:" .. (player.grounded and "t" or "f") .. " gt: " .. round(time_since_grounded) / 100
-    msg = msg .. "b:" .. mapsize(bullets)
-    msg = msg .. "m:" .. stat(0)
-    msg = msg .. " bc: " .. #buildings
+    msg = msg .. " b:" .. mapsize(bullets)
+    msg = msg .. " m:" .. round(stat(0))
+    msg = msg .. " b: " .. #buildings
+    msg = msg .. " c:" .. camera_size()
+    msg = msg .. " p:" .. mapsize(physics.items)
     print(msg, 2, 128 - 8, 0)
+    msg2 = "" .. "f:" .. stat(7)
+    msg2 = msg2 .. " j:" .. player.jumps
+    msg2 = msg2 .. " lj" .. (round((time() - player.last_jump_asked)*100)/100)
+    print(msg2, 2, 128 - 16, 0)
 end

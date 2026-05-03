@@ -63,3 +63,7 @@ function camera_offset(n)
     ensure_camera(n)
     return cameras[n].x
 end
+
+function camera_size()
+    return mapsize(cameras[1].entities)
+end

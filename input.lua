@@ -7,10 +7,16 @@ local actions = {
     interact = "x",
 }
 
+local input_history = {
+    ---@type table<Action, boolean>
+    current = {},
+    ---@type table<Action, boolean>
+    last = {},
+}
+
 ---@param x "left"|"right"|"up"|"down"|"o"|"z"|"x"
----@param just? boolean
 ---@return boolean
-local function chkbtn(x, just)
+local function chkbtn(x)
     just = just or false
     local btns = {
         left = 0,
@@ -25,17 +31,24 @@ local function chkbtn(x, just)
     if b == nil then
         return false
     end
-    if just then
-        return btnp(b)
-    end
     return btn(b)
 end
 
----@param action Action
----@param just? boolean
----@return boolean
-function isdown(action, just)
-    return chkbtn(actions[action], just)
+function input_update()
+    for action, btn in pairs(actions) do
+        input_history.last[action] = input_history.current[action]
+        input_history.current[action] = chkbtn(btn)
+    end
+end
+
+---@param b Action
+function isdown(b)
+    return input_history.current[b]
+end
+
+---@param b Action
+function isjustdown(b)
+    return input_history.current[b] and not input_history.last[b]
 end
 
 ---@return Vec2
