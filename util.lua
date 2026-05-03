@@ -36,6 +36,37 @@ function round(x)
     return flr(x + 0.5)
 end
 
+--------------------------------------- random
+local old_seed = 0
+
+---@return number
+function getseed()
+    return flr(rnd(1) * 20000)
+end
+
+---@param seed number
+function setseed(seed)
+    old_seed = getseed() -- get a random seed to restore later
+    srand(seed)
+end
+
+function unseed()
+    srand(old_seed)
+end
+
+---@param p? number
+---@return number
+function rand_geom(p)
+    p = p or 1
+    cnt = 1
+    while rnd(1) > p do
+        cnt = cnt + 1
+    end
+    return cnt
+end
+
+---------------------------------------
+
 ---@class Vec2
 Vec2 = { x = 0, y = 0 }
 Vec2.__index = Vec2
