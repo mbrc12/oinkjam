@@ -70,7 +70,7 @@ function physics:rebuild()
     end
 end
 
---- for this to work, speed of anything should not exceed two cells per frame, 
+--- for this to work, speed of anything should not exceed two cells per frame,
 --- which is 32*30 = 960
 ---@param x number
 ---@param y number
@@ -117,19 +117,24 @@ function physics:query(x, y, w, h, gx, gy, process)
     end
 end
 
-function physics:draw()
-    for c in pairs(self.cells) do
-        for _, o in ipairs(self.cells[c]) do
-            dbg("cell: ", c, "item: ", o)
-        end
-    end
+---@param cells boolean
+function physics:draw(cells)
+    cells = cells or false
+    -- for c in pairs(self.cells) do
+    --     for _, o in ipairs(self.cells[c]) do
+    --         dbg("cell: ", c, "item: ", o)
+    --     end
+    -- end
 
     for item, _ in pairs(self.items) do
-        dbg("item: ", item)
-        dbg("cells: ", self.items[item])
-        for _, c in ipairs(self.items[item]) do
-            local cell = {unrepr(c)}
-            rect(cell[1] * cellsize, cell[2] * cellsize, cell[1] * cellsize + cellsize, cell[2] * cellsize + cellsize, 1)
+        -- dbg("item: ", item)
+        -- dbg("cells: ", self.items[item])
+        if cells then
+            for _, c in ipairs(self.items[item]) do
+                local cell = { unrepr(c) }
+                rect(cell[1] * cellsize, cell[2] * cellsize, cell[1] * cellsize + cellsize, cell[2] * cellsize + cellsize,
+                    1)
+            end
         end
         rect(item.x, item.y, item.x + item.w, item.y + item.h, 8)
     end

@@ -1,5 +1,5 @@
 -- local camera_speed = 0.05
-local camera_reset_threshold = 1000
+local camera_reset_threshold = 512
 local camera_default_x = 0
 
 local cameras = {}
@@ -57,7 +57,8 @@ function camera_enable(n)
     camera(cameras[n].x, 0)
 end
 
-function get_camera(n)
+---@return number
+function camera_offset(n)
     n = n or 1
     ensure_camera(n)
     return cameras[n].x

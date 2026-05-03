@@ -1,8 +1,10 @@
 infty = 16000 -- allow 2xinfty
-delta_t = 1 / 30
-player_speed = 150
+delta_t = 1 / 60
+player_speed = 50
 gravity = 400
 epsilon = 0.0001
+moon_x = 100
+moon_y = 20
 
 building_decay_multiplier = 0 --.08
 max_building_height_diff = 10
@@ -40,6 +42,10 @@ player = {
     h = 4,
     colors = { 2, 14 },
 }
+
+function player_center()
+    return player.x + player.w / 2, player.y + player.h / 2
+end
 
 function _init()
     camera_register_entity(player, 1)
@@ -102,21 +108,124 @@ function update_player()
     physics:add(player)
 end
 
-function _update()
-    update_buildings()
-    update_player()
-    player.hp = max(0, player.hp - 0.01)
+local over = false
+
+---@class Bullet
+---@field x number
+---@field y number
+---@field vx number
+---@field vy number
+---@field w number
+---@field h number
+---@field elapsed number
+---@field show_time number
+---@field color number
+---@type table<Bullet, boolean>
+local bullets = {}
+
+function update_bullets()
+    if time() % 1 < 0.1 then
+        local moon_pos = Vec2:new(moon_x + camera_offset(1) + 4, moon_y + 4)
+        local px, py = player_center()
+        local dir = Vec2:new(px - moon_pos.x, py - moon_pos.y)
+        dir:scl(1 / (dir:len() + epsilon)):clip(1)
+        local bullet_speed = 50
+        local bullet = {
+            x = moon_pos.x,
+            y = moon_pos.y,
+            w = 1,
+            h = 1,
+            vx = dir.x * bullet_speed,
+            vy = dir.y * bullet_speed,
+            elapsed = 0,
+            show_time = 0.1,
+            color = 8,
+        }
+
+        bullets[bullet] = true
+        camera_register_entity(bullet, 1)
+    end
+    ---
+    local todelete = {}
+
+    for b, _ in pairs(bullets) do
+        if b.x < player.x - 200 or b.x > player.x + 200 or
+            b.y < player.y - 200 or b.y > player.y + 200 then
+            add(todelete, b)
+            goto continue
+        end
+
+        b.elapsed = b.elapsed + delta_t
+        local x2, y2 = b.x + b.vx * delta_t, b.y + b.vy * delta_t
+        x2, y2 = round(x2), round(y2)
+        local done = false
+        local injure = false
+        physics:query(b.x, b.y, b.w, b.h, x2, y2, function(other, _)
+            if other == player then
+                player.hp = player.hp
+                injure = true
+            end
+            done = true
+        end)
+        if done then
+            add(todelete, b)
+            local start = time()
+            local bx, by = b.x, b.y
+            local function f()
+                local t = time() - start
+                if injure then
+                    pal(7, 8)
+                end
+                anim("bullet_finish", t, bx - 4, by - 4, false)
+                pal()
+            end
+            add(queued_draws, f)
+        else
+            b.x, b.y = x2, y2
+        end
+
+        ::continue::
+    end
+    for _, b in ipairs(todelete) do
+        camera_remove_entity(b, 1)
+        bullets[b] = nil
+    end
 end
 
-------
+function _update60()
+    if over then
+        return
+    end
+    update_buildings()
+    update_player()
+    update_bullets()
+    -- player.hp = max(0, player.hp - 1)
+    if player.hp <= 0 then
+        over = true
+    end
+
+    --- stopgap to prevent memory leaks
+    physics:rebuild()
+end
+
+-----
+
+---@type fun()[]
+queued_draws = {}
 
 function _draw()
+    if over then
+        printcentered("damn", 40, 8)
+        printcentered("its over", 50, 8)
+        return
+    end
+
     camera_move(player.x - 20, 1)
 
     cls(0)
 
     line(0, floor_y, infty, floor_y, 5)
-    sprite("moon", 100, 20)
+    sprite("moon", moon_x, moon_y)
 
 
     camera_enable(1)
@@ -134,10 +243,22 @@ function _draw()
     if abs(player.vx) < epsilon then
         sprite("player", player.x, player.y, player.flip)
     else
-        anim("player_run", t, 20 + get_camera(1), player.y, player.flip)
+        anim("player_run", t, 20 + camera_offset(1), player.y, player.flip)
     end
 
-    -- physics:draw()
+    for b, _ in pairs(bullets) do
+        if b.elapsed > b.show_time then
+            pset(b.x, b.y, b.color)
+        end
+    end
+
+    --- queued draws
+    filter(queued_draws, function(f)
+        local done = f()
+        return not done
+    end)
+
+    -- physics:draw(false)
 
     camera()
 
@@ -157,7 +278,6 @@ function draw_hp()
     rect(hp_x, hp_y, hp_x + hp_w, hp_y + hp_h, 2)
 end
 
-
 function draw_sludge()
     local sludge_color = 5
 
@@ -166,21 +286,23 @@ function draw_sludge()
     local amp = { 3, 1.5 }
 
     for x = 0, 128 do
-        local lx = x + player.x
+        local lx = x + camera_offset(1)
         local val = 0
         for i = 1, 2 do
-            local cur = sin(2 * 3.14 * (lx/wavelength[i] - time() / period[i]))
+            local cur = sin(2 * 3.14 * (lx / wavelength[i] - time() / period[i]))
             val = val + (1 + cur) * amp[i]
         end
-        local y = flr(val/3)
+        local y = flr(val / 3)
         line(x, floor_y - y, x, 128, sludge_color)
     end
 end
 
 function draw_msg()
-    local msg = "x: " .. round(player.x) .. " y: " .. round(player.y) .. " "
-    local time_since_grounded = time() - player.last_grounded
-    msg = msg .. "g:" .. (player.grounded and "t" or "f") .. " gt: " .. round(time_since_grounded) / 100 .. " "
-    -- msg = msg .. " bc: " .. #buildings
-    print(msg, 2, 128-8, 0)
+    local msg = "x: " .. round(player.x)
+    -- local time_since_grounded = time() - player.last_grounded
+    -- msg = msg .. "g:" .. (player.grounded and "t" or "f") .. " gt: " .. round(time_since_grounded) / 100
+    msg = msg .. "b:" .. mapsize(bullets)
+    msg = msg .. "m:" .. stat(0)
+    msg = msg .. " bc: " .. #buildings
+    print(msg, 2, 128 - 8, 0)
 end

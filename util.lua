@@ -136,3 +136,28 @@ function mapsize(t)
     end
     return count
 end
+
+
+---@param text string
+---@param y number
+---@param c? number color
+function printcentered(text, y, c)
+    c = c or 7
+    local width = #text * 4
+    local x = (128 - width) / 2
+    print(text, x, y, c)
+end
+
+---@generic T
+---@param t T[]
+---@param fn fun(item: T): boolean
+---@return T[]
+function filter(t, fn)
+    local result = {}
+    for _, v in ipairs(t) do
+        if fn(v) then
+            add(result, v)
+        end
+    end
+    return result
+end

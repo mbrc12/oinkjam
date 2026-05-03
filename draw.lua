@@ -13,7 +13,8 @@ local sprites = {
 
 ---@enum (key) Anim
 local anims = {
-    player_run = { idxs = { 1, 2, 3 }, speed = 0.1, w = 1, h = 1 },
+    player_run = { idxs = { 1, 2, 3 }, speed = 0.1, w = 1, h = 1, loop = true },
+    bullet_finish = { idxs = { 54, 55, 56, 57, 58 }, speed = 0.05, w = 1, h = 1, loop = false },
 }
 
 ---@param name Sprite
@@ -39,6 +40,7 @@ end
 ---@param x number
 ---@param y number
 ---@param flipx? boolean
+---@return boolean true if animation ended (only for non-looping animations)
 function anim(name, t, x, y, flipx)
     local item = anims[name]
     x = round(x)
@@ -46,9 +48,17 @@ function anim(name, t, x, y, flipx)
     if not item then
         print("Anim '" .. name .. "' not found")
     end
-    local frame = flr(t / item.speed) % #item.idxs + 1
+    local frame = flr(t / item.speed)
+    if frame > #item.idxs then
+        if item.loop == false then
+            return true
+        else
+            frame = (frame - 1) % #item.idxs + 1
+        end
+    end
     local idx = item.idxs[frame]
     local w = item.w or 1
     local h = item.h or 1
     spr(idx, x, y, w, h, flipx or false, false)
+    return false
 end
