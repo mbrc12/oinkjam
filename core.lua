@@ -1,6 +1,8 @@
 infty = 16000 -- allow 2xinfty
 delta_t = 1 / 30
 player_speed = 100
+gravity = 400
+building_decay_rate = 0.1
 
 floor_y = 100
 
@@ -13,34 +15,83 @@ local floor = {
 
 local player = {
     x = 0,
-    y = floor_y - 4,
+    y = 0,
+    vx = 0,
+    vy = 0,
+
     -- never touched
     w = 8,
     h = 4,
     colors = { 2, 14 },
 }
 
+--- Buildings are top to bottom
+---@class Building 
+---@field x number floor x
+---@field w number 
+---@field h number
+---@field decay number
+---@field seed number
+---@type Building[]
+local buildings = {}
+
 function _init()
     camera_register_entity(player, 1)
 end
 
-function _update()
+function minimal_collision(x, y, w, h, x2, y2)
+    local earliest_t = 1
+    local xf, yf = x2, y2
+    ---@param hit HitResult
+    local function allow(hit)
+        return true
+    end
+    local function work(box)
+        local result = hit(
+            x, y, w, h,
+            box.x, box.y, box.w, box.h,
+            x2, y2
+        )
+        if result and allow(result) then
+            if result.t < earliest_t then
+                earliest_t = result.t
+                xf, yf = result.tx, result.ty
+            end
+        end
+    end
+    work(floor)
+    for _, b in ipairs(buildings) do
+        work({
+            x = b.x,
+            y = floor_y - b.h - 1,
+            w = b.w,
+            h = b.h,
+        })
+    end
+    return xf, yf
+end
+
+function update_player()
     local dir = direction()
-    dir.y = 0
-    dir.x *= player_speed
-    local x2, y2 = player.x + dir.x * delta_t, player.y + dir.y * delta_t
-    local result = hit(
-        player.x, player.y, player.w, player.h,
-        floor.x, floor.y, floor.w, floor.h,
-        x2, y2
-    )
-    if result then
-        player.x, player.y = result.tx, result.ty
-    else
-        player.x, player.y = x2, y2
+    player.vy = min(200, player.vy + gravity * delta_t)
+    player.vx = dir.x * player_speed
+
+    if isdown("interact", true) then
+        player.vy -= 200
     end
 
+    --- do collision in two steps to allow sliding on walls
+    local x2, y2 = player.x + player.vx * delta_t, player.y + player.vy * delta_t
+    local sx, sy = minimal_collision(player.x, player.y, player.w, player.h, x2, player.y)
+    local sx2, sy2 = minimal_collision(sx, sy, player.w, player.h, sx, y2)
+    player.vx = (sx2-player.x) / delta_t
+    player.vy = (sy2-player.y) / delta_t
+    player.x, player.y = sx2, sy2
+end
+
+function _update()
     update_buildings()
+    update_player()
 end
 
 function _draw()
@@ -75,13 +126,6 @@ function draw_physics()
 end
 
 -------------------------
----@class Building
----@field x number
----@field w number
----@field h number
----@field decay number
----@field seed number
-local buildings = {}
 local next_building_x = 0
 
 function update_buildings()
@@ -93,7 +137,7 @@ function update_buildings()
             x = next_building_x,
             w = w,
             h = h,
-            decay = rnd() * 0.1,
+            decay = rnd() * 0.4,
             seed = getseed(),
         }
     end
@@ -105,7 +149,7 @@ function update_buildings()
         if rnd() < b.decay then
             b.h -= 2
         end
-        if b.h <= 0 then
+        if b.h <= 0 or b.x + b.w < player.x - 200 then
             add(todelete, b)
         end
     end

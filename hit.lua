@@ -1,11 +1,11 @@
---- copied from https://github.com/kikito/hit.p8/blob/main/hit.lua
+--- copied from https://github.com/kikito/hit.p8/blob/main/hit.lua, annotations my own
 
 ---@class HitResult
 ---@field t number time of collision between 0 and 1, or negative if already intersect
----field nx number collision normal x, either -1, 0 or 1
----@field ny number collision normal y, either -1, 0 or 1
----@field tx number collision x coordinate
----@field ty number collision y coordinate
+---field nx number normal x, either -1, 0 or 1
+---@field ny number normal y, either -1, 0 or 1
+---@field tx number moved x coordinate
+---@field ty number moved y coordinate
 ---@field intersect boolean true if aabb1 and aabb2 are already intersecting
 
 ---@param x1    number  aabb1 left edge
@@ -18,7 +18,7 @@
 ---@param h2    number  aabb2 height
 ---@param goalx number  aabb1 destination x
 ---@param goaly number  aabb1 destination y
----@return HitResult? nil if no collision, or a table with collision info
+---@return HitResult? nil if no collision
 function hit(x1,y1,w1,h1, x2,y2,w2,h2, goalx, goaly)
   -- minkowsky difference between 2 aabbs, which is another aabb
   local x,y,w,h=x2-x1-w1,y2-y1-h1,w1+w2,h1+h2
