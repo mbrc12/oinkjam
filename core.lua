@@ -31,8 +31,8 @@ player = {
     flip = false,
     grounded = false,
 
-    last_jump_asked = 0,
-    last_grounded = 0,
+    last_jump_asked = -100,
+    last_grounded = -100,
 
     hp = 15,
     max_hp = 20,
