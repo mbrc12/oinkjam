@@ -4,7 +4,7 @@ local actions = {
     right = "right",
     up = "up",
     down = "down",
-    interact = "o",
+    interact = "x",
 }
 
 ---@param x "left"|"right"|"up"|"down"|"o"|"z"|"x"
