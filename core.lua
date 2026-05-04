@@ -13,7 +13,7 @@ flat_building_chance = 0.3
 jump_forgive_time = 0.1
 jump_velocity = 150
 
-sludge_damage_per_second = 5
+sludge_damage_per_second = 100
 
 floor_y = 100
 
@@ -175,6 +175,7 @@ local bullet_protos = {
         show_time = 0.1,
         elapsed = 0,
         target = function(b, dt)
+            local gravity = 100
             b.vy += gravity * dt
             local x2, y2 = b.x + b.vx * dt, b.y + b.vy * dt
             return x2, y2
@@ -193,10 +194,10 @@ end
 
 function spawn_bullets()
     if time() % 1 < 0.1 then -- moon
-        local moon_pos = Vec2:new(moon_x + camera_offset(1) + 4, moon_y + 4)
+        local moon_pos = vec2:new(moon_x + camera_offset(1) + 4, moon_y + 4)
         local px, py = player_center()
-        local dir = Vec2:new(px - moon_pos.x, py - moon_pos.y):unit()
-        local speed = 50
+        local dir = vec2:new(px - moon_pos.x, py - moon_pos.y):unit()
+        local speed = 100
         local bullet = {
             x = moon_pos.x,
             y = moon_pos.y,
@@ -257,31 +258,13 @@ function update_bullets()
     end
 end
 
--- local enemies = {}
--- local proto = {
---     rat = {
---         w = 6,
---         h = 2,
---         update = function(e, dt)
---             physics:del(e)
---         end
---     }
--- }
---
---
--- function spawn_enemy(kind, x, y)
---    local e = {
---         x = x,
---         y = y,
---     }
---     setmetatable(e, { __index = proto[kind] })
---     physics:add(e)
---     camera_register_entity(e, 1)
---     add(enemies, e)
--- end
 
 function _update60()
     if over then
+        sfx(sounds._stop, 1)
+        sfx(sounds._stop, 2)
+        sfx(sounds._stop, 3)
+        sfx(sounds._stop, 4)
         return
     end
     update_buildings()

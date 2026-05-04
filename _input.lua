@@ -53,7 +53,7 @@ end
 
 ---@return Vec2
 function direction()
-    local dir = Vec2:new(0, 0)
+    local dir = vec2:new(0, 0)
     if isdown("left") then
         dir.x = dir.x - 1
     end

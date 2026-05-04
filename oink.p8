@@ -1,15 +1,295 @@
 pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
-#include hit.lua
 #include sounds.lua
 #include physics.lua
 #include util.lua
 #include draw.lua
-#include input.lua
 #include core.lua
-#include camera.lua
 #include buildings.lua
+#include enemies.lua
+-->8
+-- hit.lua
+--- copied from https://github.com/kikito/hit.p8/blob/main/hit.lua, annotations my own
+
+function hit(x1,y1,w1,h1, x2,y2,w2,h2, goalx, goaly)
+  -- minkowsky difference between 2 aabbs, which is another aabb
+  local x,y,w,h=x2-x1-w1,y2-y1-h1,w1+w2,h1+h2
+  local dx,dy=goalx-x1,goaly-y1
+
+  local t,nx,ny,tx,ty
+  -- if diff contains point 0,0, there's intersection between first and second aabb
+  local intersect = x<0 and x+w>0 and y<0 and y+h>0
+
+  -- degenerate case: intersecting and not moving - use minimum displacement vector
+  -- which is the nearest corner to 0,0 in the minkowsky diff
+  if intersect and dx==0 and dy==0 then
+    local px=abs(x)<abs(x+w) and x or x+w -- abs(x) can be bigger than abs(x+w)
+    local py=abs(y)<abs(y+h) and y or y+h
+    if abs(px)<abs(py) then
+      py=0
+      t= -abs(px)/w
+    else
+      px=0
+      t= -abs(py)/h
+    end
+    nx=px>0 and 1 or px<0 and -1 or 0
+    ny=py>0 and 1 or py<0 and -1 or 0
+    tx,ty=x1+px,y1+py
+    return {t = t, nx = nx, ny = ny, tx = tx, ty = ty, intersect = true}
+  end
+
+  -- no intersection, or intersection with movement
+  -- calculate the clipping between the minkowsky diff aabb with the displacement vector dx,dy
+  -- this is a modified version of the liang-barky line-clipping algorithm with normals added
+  local t1,t2=-32768,32767 -- -huge,+huge
+  local nx1,ny1,nx2,ny2=0,0,0,0
+  local p,q,r
+
+  for side = 1,4 do
+    if     side==1 then nx,ny,p,q= -1, 0,-dx, -x -- left
+    elseif side==2 then nx,ny,p,q=  1, 0, dx,x+w -- right
+    elseif side==3 then nx,ny,p,q=  0,-1,-dy, -y -- top
+    else                nx,ny,p,q=  0, 1, dy,y+h -- bottom
+    end
+
+    if p==0 then
+      if q<=0 then return nil end
+    else
+      r=q/p
+      if p<0 then
+        if     r>t2 then return nil
+        elseif r>t1 then t1,nx1,ny1=r,nx,ny
+        end
+      else
+        if     r<t1 then return nil
+        elseif r<t2 then t2,nx2,ny2=r,nx,ny
+        end
+      end
+    end
+  end
+
+  if intersect then
+    -- aabb1 goes though aabb2, in the direction (forwards or backwards)
+    -- select the smallest displacement
+    if abs(t1)<=abs(t2) then
+      t,nx,ny=t1,nx1,ny1
+    else
+      t,nx,ny=t2,nx2,ny2
+    end
+  elseif 0<=t1 and t1<=1 then
+    t,nx,ny=t1,nx1,ny1
+  else
+    return nil
+  end
+
+  -- x1+dx*t alone will be inaccurate because of floating point
+  -- use a more direct number for the "touch points" when possible
+  tx=nx<0 and x2-w1 or nx>0 and x2+w2 or x1+dx*t
+  ty=ny<0 and y2-h1 or ny>0 and y2+h2 or y1+dy*t
+
+  return {t = t, nx = nx,ny = ny,tx = tx, ty = ty, intersect = intersect}
+end
+
+-->8
+-- input.lua
+---@enum (key) action
+local actions = {
+    left = "left",
+    right = "right",
+    up = "up",
+    down = "down",
+    interact = "x",
+}
+
+local input_history = {
+    ---@type table<action, boolean>
+    current = {},
+    ---@type table<action, boolean>
+    last = {},
+}
+
+---@param x "left"|"right"|"up"|"down"|"o"|"z"|"x"
+---@return boolean
+local function chkbtn(x)
+    just = just or false
+    local btns = {
+        left = 0,
+        right = 1,
+        up = 2,
+        down = 3,
+        o = 4,
+        z = 4,
+        x = 5,
+    }
+    local b = btns[x]
+    if b == nil then
+        return false
+    end
+    return btn(b)
+end
+
+function input_update()
+    for action, btn in pairs(actions) do
+        input_history.last[action] = input_history.current[action]
+        input_history.current[action] = chkbtn(btn)
+    end
+end
+
+---@param b action
+function isdown(b)
+    return input_history.current[b]
+end
+
+---@param b action
+function isjustdown(b)
+    return input_history.current[b] and not input_history.last[b]
+end
+
+---@return vec2
+function direction()
+    local dir = vec2:new(0, 0)
+    if isdown("left") then
+        dir.x = dir.x - 1
+    end
+    if isdown("right") then
+        dir.x = dir.x + 1
+    end
+    if isdown("up") then
+        dir.y = dir.y - 1
+    end
+    if isdown("down") then
+        dir.y = dir.y + 1
+    end
+    return dir
+end
+-->8
+-- camera.lua
+-- local camera_speed = 0.05
+local camera_reset_threshold = 600
+local camera_default_x = 0
+
+local cameras = {}
+local function ensure_camera(n)
+    n = n or 1
+    if not cameras[n] then
+        cameras[n] = { x = camera_default_x, entities = {} }
+    end
+end
+
+ensure_camera(1)
+
+--- must have x position
+---@param entity table
+---@param n? number camera layer
+function camera_register_entity(entity, n)
+    n = n or 1
+    ensure_camera(n)
+    cameras[n].entities[entity] = true
+end
+
+---@param entity table
+---@param n? number camera layer
+function camera_remove_entity(entity, n)
+    n = n or 1
+    ensure_camera(n)
+    cameras[n].entities[entity] = nil
+end
+
+---@param x number
+---@param n? number camera layer
+function camera_move(x, n)
+    n = n or 1
+    ensure_camera(n)
+    local cam = cameras[n]
+    -- cam.x = cam.x + (x - cam.x) * camera_speed
+    cam.x = round(x)
+    if cam.x < camera_reset_threshold then
+        return
+    end
+
+    -- logic to reset camera and all entities positions to avoid precision issues
+    cam.x -= camera_reset_threshold
+    for entity, _ in pairs(cam.entities) do
+        entity.x -= camera_reset_threshold
+    end
+    next_building_x -= camera_reset_threshold
+    physics:rebuild()
+end
+
+---@param n? number camera layer
+function camera_enable(n)
+    n = n or 1
+    ensure_camera(n)
+    camera(cameras[n].x, 0)
+end
+
+---@return number
+function camera_offset(n)
+    n = n or 1
+    ensure_camera(n)
+    return cameras[n].x
+end
+
+function camera_size()
+    return mapsize(cameras[1].entities)
+end
+
+-->8
+--- vec2.lua
+
+vec2 = { x = 0, y = 0 }
+vec2.__index = vec2
+
+
+function vec2:new(x, y)
+    return setmetatable({ x = x or 0, y = y or 0 }, self)
+end
+
+
+function vec2:add(other)
+    self.x = self.x + other.x
+    self.y = self.y + other.y
+    return self
+end
+
+---@param x number
+---@param y number
+---@return vec2 self
+function vec2:add2(x, y)
+    self.x = self.x + x
+    self.y = self.y + y
+    return self
+end
+
+
+function vec2:scl(s)
+    self.x = self.x * s
+    self.y = self.y * s
+    return self
+end
+
+
+function vec2:clip(max)
+    local len = self:len()
+    if len > max then
+        self:scl(max / len)
+    end
+    return self
+end
+
+---@return number
+function vec2:len()
+    return sqrt(self.x * self.x + self.y * self.y)
+end
+
+function vec2:unit()
+    local len = self:len()
+    if len > 0 then
+        self:scl(1 / len)
+    end
+    return self
+end
 
 __gfx__
 0000000000222ee020222ee000222ee000000000000000000000000000000000000000000000000000000006d000000000000000000000000000000000000000
@@ -51,14 +331,7 @@ __gfx__
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000d55dddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000dd55dddd500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000d0555dd0550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00dd0055500d00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0055d00d00d000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00550ddddd0050000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-00dd0000000550000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-000dd555555500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+00000000ddd000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
 0003000006720057100170000700007000170000700007001b7000170001700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700
 001e00032b5100c5100c5000250038500035000b500065000550000500005000050000500005002c5000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
