@@ -121,16 +121,8 @@ function update_player()
 
     -- sludge check
 
-    local floor_check_depth = 2
     local was_on_sludge = player.on_sludge
-    player.on_sludge = false
-    physics:query(player.x, player.y, player.w, player.h,
-        player.x, player.y + floor_check_depth,
-        function(other, _)
-            if other == floor then
-                player.on_sludge = true
-            end
-        end)
+    player.on_sludge = physics:intersects(player, floor, 0.1)
     if player.on_sludge and not was_on_sludge then
         sfx(sounds.sludge, channels.sfx_2)
     elseif not player.on_sludge and was_on_sludge then

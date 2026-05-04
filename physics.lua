@@ -142,3 +142,20 @@ function physics:draw(cells)
         rect(item.x, item.y, item.x + item.w, item.y + item.h, 2)
     end
 end
+
+---@param item any
+---@param other any
+---@param expand? number
+function physics:intersects(item, other, expand)
+    expand = expand or 0
+    local itemx = item.x - expand
+    local itemy = item.y - expand
+    local itemw = item.w + 2 * expand
+    local itemh = item.h + 2 * expand
+    return not (
+        itemx + itemw <= other.x or
+        itemx >= other.x + other.w or
+        itemy + itemh <= other.y or
+        itemy >= other.y + other.h
+    )
+end
