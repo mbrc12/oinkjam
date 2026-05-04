@@ -15,6 +15,7 @@ local sprites = {
 local anims = {
     player_run = { idxs = { 1, 2, 3 }, speed = 0.1, w = 1, h = 1, loop = true },
     bullet_finish = { idxs = { 54, 55, 56, 57, 58 }, speed = 0.05, w = 1, h = 1, loop = false },
+    rat = { idxs = { 66, 67 }, speed = 0.2, w = 1, h = 1, loop = true },
 }
 
 ---@param name Sprite

@@ -125,6 +125,14 @@ function Vec2:len()
     return sqrt(self.x * self.x + self.y * self.y)
 end
 
+function Vec2:unit()
+    local len = self:len()
+    if len > 0 then
+        self:scl(1 / len)
+    end
+    return self
+end
+
 ---------------------------------------
 
 ---@param t table

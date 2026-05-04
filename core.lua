@@ -149,33 +149,66 @@ local over = false
 ---@field elapsed number
 ---@field show_time number
 ---@field color number
+---@field target fun(self: Bullet, dt: number): (number, number)
 ---@type table<Bullet, boolean>
 local bullets = {}
 
-function update_bullets()
-    if time() % 1 < 0.1 then
+---@enum (key) BulletKind
+local bullet_protos = {
+    moon = {
+        w = 1,
+        h = 1,
+        damage = 1,
+        color = 6,
+        show_time = 0.1,
+        elapsed = 0,
+        target = function(b, dt)
+            local x2, y2 = b.x + b.vx * dt, b.y + b.vy * dt
+            return x2, y2
+        end
+    },
+    rat = {
+        w = 2,
+        h = 2,
+        damage = 5,
+        color = 4,
+        show_time = 0.1,
+        elapsed = 0,
+        target = function(b, dt)
+            b.vy += gravity * dt
+            local x2, y2 = b.x + b.vx * dt, b.y + b.vy * dt
+            return x2, y2
+        end
+    }
+}
+
+---@param bullet Bullet
+---@param kind BulletKind
+function spawn_bullet(bullet, kind)
+    assert(bullet_protos[kind], "Unknown bullet kind: " .. kind)
+    setmetatable(bullet, { __index = bullet_protos[kind] })
+    bullets[bullet] = true
+    camera_register_entity(bullet, 1)
+end
+
+function spawn_bullets()
+    if time() % 1 < 0.1 then -- moon
         local moon_pos = Vec2:new(moon_x + camera_offset(1) + 4, moon_y + 4)
         local px, py = player_center()
-        local dir = Vec2:new(px - moon_pos.x, py - moon_pos.y)
-        dir:scl(1 / (dir:len() + epsilon)):clip(1)
-        local bullet_speed = 50
+        local dir = Vec2:new(px - moon_pos.x, py - moon_pos.y):unit()
+        local speed = 50
         local bullet = {
             x = moon_pos.x,
             y = moon_pos.y,
-            w = 1,
-            h = 1,
-            vx = dir.x * bullet_speed,
-            vy = dir.y * bullet_speed,
-            damage = 1,
-            elapsed = 0,
-            show_time = 0.1,
-            color = 8,
+            vx = dir.x * speed,
+            vy = dir.y * speed,
         }
-
-        bullets[bullet] = true
-        camera_register_entity(bullet, 1)
+        spawn_bullet(bullet, "moon")
     end
-    ---
+end
+
+function update_bullets()
+    spawn_bullets()
     local todelete = {}
 
     for b, _ in pairs(bullets) do
@@ -186,7 +219,7 @@ function update_bullets()
         end
 
         b.elapsed = b.elapsed + delta_t
-        local x2, y2 = b.x + b.vx * delta_t, b.y + b.vy * delta_t
+        local x2, y2 = b:target(delta_t)
         local done = false
         local injure = false
         physics:query(b.x, b.y, b.w, b.h, x2, y2, function(other, _)
@@ -223,6 +256,29 @@ function update_bullets()
         bullets[b] = nil
     end
 end
+
+-- local enemies = {}
+-- local proto = {
+--     rat = {
+--         w = 6,
+--         h = 2,
+--         update = function(e, dt)
+--             physics:del(e)
+--         end
+--     }
+-- }
+--
+--
+-- function spawn_enemy(kind, x, y)
+--    local e = {
+--         x = x,
+--         y = y,
+--     }
+--     setmetatable(e, { __index = proto[kind] })
+--     physics:add(e)
+--     camera_register_entity(e, 1)
+--     add(enemies, e)
+-- end
 
 function _update60()
     if over then
@@ -281,7 +337,7 @@ function _draw()
     for b, _ in pairs(bullets) do
         if b.elapsed > b.show_time then
             local bx, by = round(b.x), round(b.y)
-            pset(bx, by, b.color)
+            rectfill(bx, by, bx + b.w - 1, by + b.h - 1, b.color)
         end
     end
 
@@ -309,7 +365,7 @@ function draw_hp()
     local l = player.hp / player.max_hp * hp_w
     rectfill(hp_x, hp_y, hp_x + l, hp_y + hp_h, 8)
     rect(hp_x, hp_y, hp_x + hp_w, hp_y + hp_h, 2)
-    print("" .. round(player.hp), hp_x + hp_w + 2, hp_y, 7)
+    print("" .. round(player.hp), hp_x + hp_w + 3, hp_y, 7)
 end
 
 function draw_sludge()
