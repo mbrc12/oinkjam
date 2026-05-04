@@ -1,0 +1,11 @@
+sounds = {
+    land = 0,
+    sludge = 1,
+    hit = 2,
+    _stop = -2,
+}
+
+channels = {
+    sfx_1 = 1,
+    sfx_2 = 2,
+}

@@ -1,5 +1,5 @@
 -- local camera_speed = 0.05
-local camera_reset_threshold = 512
+local camera_reset_threshold = 600
 local camera_default_x = 0
 
 local cameras = {}

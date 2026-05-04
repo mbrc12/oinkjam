@@ -13,6 +13,8 @@ flat_building_chance = 0.3
 jump_forgive_time = 0.1
 jump_velocity = 150
 
+sludge_damage_per_second = 5
+
 floor_y = 100
 
 floor = {
@@ -34,8 +36,10 @@ player = {
     last_grounded = -100,
     jumps = 0,
 
-    hp = 15,
-    max_hp = 20,
+    on_sludge = false,
+
+    hp = 150,
+    max_hp = 200,
 
     -- never touched
     w = 8,
@@ -101,8 +105,10 @@ function update_player()
     local x2, y2 = player.x + player.vx * delta_t, player.y + player.vy * delta_t
     local sx, sy = minimal_collision(player.x, player.y, player.w, player.h, x2, player.y)
     local sx2, sy2 = minimal_collision(sx, sy, player.w, player.h, sx, y2)
-    
     if player.vy > 0 and abs(sy2 - player.y) < epsilon then
+        if not player.grounded then
+            sfx(sounds.land, 1)
+        end
         player.grounded = true
         player.jumps = 2
         player.last_grounded = time()
@@ -112,6 +118,28 @@ function update_player()
     player.vx = (sx2 - player.x) / delta_t
     player.vy = (sy2 - player.y) / delta_t
     player.x, player.y = sx2, sy2
+
+    -- sludge check
+
+    local floor_check_depth = 2
+    local was_on_sludge = player.on_sludge
+    player.on_sludge = false
+    physics:query(player.x, player.y, player.w, player.h,
+        player.x, player.y + floor_check_depth,
+        function(other, _)
+            if other == floor then
+                player.on_sludge = true
+            end
+        end)
+    if player.on_sludge and not was_on_sludge then
+        sfx(sounds.sludge, channels.sfx_2)
+    elseif not player.on_sludge and was_on_sludge then
+        sfx(sounds._stop, channels.sfx_2)
+    end
+
+    if player.on_sludge then
+        player.hp = max(0, player.hp - sludge_damage_per_second * delta_t)
+    end
 
     physics:add(player)
 end
@@ -125,6 +153,7 @@ local over = false
 ---@field vy number
 ---@field w number
 ---@field h number
+---@field damage number
 ---@field elapsed number
 ---@field show_time number
 ---@field color number
@@ -136,8 +165,7 @@ function update_bullets()
         local moon_pos = Vec2:new(moon_x + camera_offset(1) + 4, moon_y + 4)
         local px, py = player_center()
         local dir = Vec2:new(px - moon_pos.x, py - moon_pos.y)
-        -- dir:scl(1 / (dir:len() + epsilon)):clip(1)
-        dir:scl(1/100)
+        dir:scl(1 / (dir:len() + epsilon)):clip(1)
         local bullet_speed = 50
         local bullet = {
             x = moon_pos.x,
@@ -146,11 +174,11 @@ function update_bullets()
             h = 1,
             vx = dir.x * bullet_speed,
             vy = dir.y * bullet_speed,
+            damage = 1,
             elapsed = 0,
             show_time = 0.1,
             color = 8,
         }
-        dbg(bullet)
 
         bullets[bullet] = true
         camera_register_entity(bullet, 1)
@@ -171,7 +199,7 @@ function update_bullets()
         local injure = false
         physics:query(b.x, b.y, b.w, b.h, x2, y2, function(other, _)
             if other == player then
-                player.hp = player.hp
+                player.hp = player.hp - b.damage
                 injure = true
             end
             done = true
@@ -189,6 +217,9 @@ function update_bullets()
                 pal()
             end
             add(queued_draws, f)
+            if injure then
+                sfx(sounds.hit, channels.sfx_1)
+            end
         else
             b.x, b.y = x2, y2
         end
@@ -286,12 +317,13 @@ function draw_hp()
     local l = player.hp / player.max_hp * hp_w
     rectfill(hp_x, hp_y, hp_x + l, hp_y + hp_h, 8)
     rect(hp_x, hp_y, hp_x + hp_w, hp_y + hp_h, 2)
+    print("" .. round(player.hp), hp_x + hp_w + 2, hp_y, 7)
 end
 
 function draw_sludge()
-    local sludge_color = 5
+    local sludge_color = 13
 
-    local wavelength = { 600, 120, 80 }
+    local wavelength = { 600, 120, 60 } -- camera offset divisible by wavelength
     local period = { 17, 7, 3 }
     local amp = { 5, 3, 1.5 }
 
@@ -319,6 +351,6 @@ function draw_msg()
     print(msg, 2, 128 - 8, 0)
     msg2 = "" .. "f:" .. stat(7)
     msg2 = msg2 .. " j:" .. player.jumps
-    msg2 = msg2 .. " lj" .. (round((time() - player.last_jump_asked)*100)/100)
+    msg2 = msg2 .. " lj" .. (round((time() - player.last_jump_asked) * 100) / 100)
     print(msg2, 2, 128 - 16, 0)
 end
