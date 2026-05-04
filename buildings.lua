@@ -10,6 +10,17 @@ next_building_x = 0
 ---@type Building[]
 buildings = {}
 
+function buildings_init()
+    next_building_x = 0
+    buildings = {}
+    events:register("camera_reset", function(offset)
+        next_building_x -= offset
+        for _, b in ipairs(buildings) do
+            b.x -= offset
+        end
+    end)
+end
+
 function update_buildings()
     local function new_building(lh)
         local w = rand_geom(1 / 3) * 2 + 6
@@ -50,7 +61,6 @@ function update_buildings()
 
     for _, b in ipairs(todelete) do
         physics:del(b)
-        camera_remove_entity(b, 1)
         del(buildings, b)
     end
 
@@ -58,7 +68,6 @@ function update_buildings()
         local h = #buildings > 0 and buildings[#buildings].h or 0
         local b = new_building(h)
         physics:add(b)
-        camera_register_entity(b, 1)
         add(buildings, b)
 
         next_building_x = b.x + b.w + 4

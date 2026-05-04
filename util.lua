@@ -108,3 +108,11 @@ function filter(t, fn)
     end
     return result
 end
+
+---@param t table
+---@param items table[]
+function addmany(t, items)
+    for _, v in ipairs(items) do
+        add(t, v)
+    end
+end

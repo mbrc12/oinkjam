@@ -49,7 +49,6 @@ function spawn_bullet(bullet, kind)
     assert(bullet_protos[kind], "Unknown bullet kind: " .. kind)
     setmetatable(bullet, { __index = bullet_protos[kind] })
     bullets[bullet] = true
-    camera_register_entity(bullet, 1)
 end
 
 function spawn_bullets()
@@ -113,7 +112,6 @@ function update_bullets()
         ::continue::
     end
     for _, b in ipairs(todelete) do
-        camera_remove_entity(b, 1)
         bullets[b] = nil
     end
 end
@@ -129,6 +127,7 @@ end
 
 
 local enemies = {}
+
 local proto = {
     rat = {
         w = 6,
@@ -147,6 +146,16 @@ function spawn_enemy(kind, x, y)
     }
     setmetatable(e, { __index = proto[kind] })
     physics:add(e)
-    camera_register_entity(e, 1)
     add(enemies, e)
+end
+
+function enemies_and_bullets_init()
+    events:register("camera_reset", function(offset)
+        for e, _ in pairs(enemies) do
+            e.x -= offset
+        end
+        for b, _ in pairs(bullets) do
+            b.x -= offset
+        end
+    end)
 end

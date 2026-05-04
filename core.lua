@@ -52,10 +52,16 @@ function player_center()
 end
 
 function _init()
-    camera_register_entity(player, 1)
     physics:add(player)
     physics:add(floor, true)
     dbg("init")
+    events:init()
+    buildings_init()
+    enemies_and_bullets_init()
+    events:register("camera_reset", function(offset)
+        player.x -= offset
+        physics:rebuild()
+    end)
 end
 
 function minimal_collision(x, y, w, h, x2, y2)
@@ -249,10 +255,9 @@ function draw_msg()
     local msg = "" .. round(player.x)
     -- local time_since_grounded = time() - player.last_grounded
     -- msg = msg .. "g:" .. (player.grounded and "t" or "f") .. " gt: " .. round(time_since_grounded) / 100
-    msg = msg .. " b:" .. mapsize(bullets)
+    -- msg = msg .. " b:" .. mapsize(bullets)
     msg = msg .. " m:" .. round(stat(0))
     msg = msg .. " b: " .. #buildings
-    msg = msg .. " c:" .. camera_size()
     msg = msg .. " p:" .. mapsize(physics.items)
     print(msg, 2, 128 - 8, 0)
     msg2 = "" .. "f:" .. stat(7)
