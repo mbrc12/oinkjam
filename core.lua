@@ -312,7 +312,8 @@ function _draw()
     end
 
     if abs(player.vx) < epsilon then
-        sprite("player", player.x, player.y, player.flip)
+        -- sprite("player", player.x, player.y, player.flip)
+        anim("snake", t, player.x, player.y, player.flip)
     else
         anim("player_run", t, 20 + camera_offset(1), player.y, player.flip)
     end
