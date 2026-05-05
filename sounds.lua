@@ -2,6 +2,7 @@ sounds = {
     land = 0,
     sludge = 1,
     hit = 2,
+    heartloss = 4,
     _stop = -2,
 }
 

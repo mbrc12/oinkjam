@@ -83,8 +83,8 @@ function update_bullets()
         local done = false
         local injure = false
         physics:query(b.x, b.y, b.w, b.h, x2, y2, function(other, _)
-            if other == player then
-                player.hp = player.hp - b.damage
+            if other == player and not (player.invincible > 0) then
+                take_damage()
                 injure = true
             end
             done = true

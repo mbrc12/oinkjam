@@ -2,6 +2,7 @@
 local sprites = {
     player = { idx = 1 },
     player_jump = { idx = 2 },
+    heart = { idx = 6 },
 
     cloud_1 = { idx = 48 },
     cloud_2 = { idx = 49 },

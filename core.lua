@@ -13,7 +13,9 @@ flat_building_chance = 0.3
 jump_forgive_time = 0.1
 jump_velocity = 150
 
-sludge_damage_per_second = 100
+sludge_max_limit = 1
+
+default_invincibility_time = 1
 
 floor_y = 100
 
@@ -37,9 +39,10 @@ player = {
     jumps = 0,
 
     on_sludge = false,
+    on_sludge_time = 0,
 
-    hp = 150,
-    max_hp = 200,
+    hp = 3,
+    invincible = 0,
 
     -- never touched
     w = 8,
@@ -126,20 +129,30 @@ function update_player()
     player.x, player.y = sx2, sy2
 
     -- sludge check
-
     local was_on_sludge = player.on_sludge
     player.on_sludge = physics:intersects(player, floor, 0.1)
+
     if player.on_sludge and not was_on_sludge then
         sfx(sounds.sludge, channels.sfx_2)
     elseif not player.on_sludge and was_on_sludge then
         sfx(sounds._stop, channels.sfx_2)
     end
 
-    if player.on_sludge then
-        player.hp = max(0, player.hp - sludge_damage_per_second * delta_t)
+    if player.on_sludge and not (player.invincible > 0) then
+        player.on_sludge_time = player.on_sludge_time + delta_t
+        if player.on_sludge_time > sludge_max_limit then
+            player.on_sludge_time = 0
+            take_damage()
+        end
     end
 
     physics:add(player)
+end
+
+function take_damage()
+    player.hp -= 1
+    sfx(sounds.heartloss, channels.sfx_1)
+    player.invincible = default_invincibility_time
 end
 
 local over = false
@@ -170,12 +183,6 @@ end
 queued_draws = {}
 
 function _draw()
-    if over then
-        printcentered("damn", 40, 8)
-        printcentered("its over", 50, 8)
-        return
-    end
-
     camera_move(player.x - 20, 1)
 
     cls(0)
@@ -196,12 +203,20 @@ function _draw()
         player.flip = false
     end
 
+    if player.invincible > 0 then
+        player.invincible = max(0, player.invincible - delta_t)
+        if time() % 0.2 < 0.1 then
+            pal(14, 7)
+            pal(2, 6)
+        end
+    end
+
     if abs(player.vx) < epsilon then
-        -- sprite("player", player.x, player.y, player.flip)
-        anim("snake", t, player.x, player.y, player.flip)
+        sprite("player", player.x, player.y, player.flip)
     else
         anim("player_run", t, 20 + camera_offset(1), player.y, player.flip)
     end
+    pal()
 
     draw_bullets()
 
@@ -219,17 +234,30 @@ function _draw()
     draw_hp()
 
     draw_msg()
+
+    if over then
+        printcentered("damn", 40, 8)
+        printcentered("its over", 50, 8)
+        return
+    end
 end
 
 function draw_hp()
-    local hp_h = 4
-    local hp_w = 50
+    local gaps = { -1, 0, 1}
+    local hp_w = 5
     local hp_x = 2
     local hp_y = hp_x
-    local l = player.hp / player.max_hp * hp_w
-    rectfill(hp_x, hp_y, hp_x + l, hp_y + hp_h, 8)
-    rect(hp_x, hp_y, hp_x + hp_w, hp_y + hp_h, 2)
-    print("" .. round(player.hp), hp_x + hp_w + 3, hp_y, 7)
+    local gap = 2
+    for i = 1, player.hp do
+        local dg = 0
+        if i == player.hp then
+            if player.invincible == 0 and player.on_sludge then
+                dg = gaps[flr(time() * 10) % 2 + 1]
+            end
+        end
+        local x = hp_x + (i - 1) * (hp_w + gap) + dg
+        sprite("heart", x, hp_y)
+    end
 end
 
 function draw_sludge()
