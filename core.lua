@@ -19,6 +19,11 @@ default_invincibility_time = 1
 
 floor_y = 100
 
+food_scores = {
+    food = 3,
+    bigfood = 8,
+}
+
 floor = {
     x = -infty,
     y = floor_y,
@@ -42,7 +47,13 @@ player = {
     on_sludge_time = 0,
 
     hp = 3,
+
+    score = 0,
+    displayed_score = 0,
+
     invincible = 0,
+
+    over = false,
 
     -- never touched
     w = 8,
@@ -54,6 +65,8 @@ function player_center()
     return player.x + player.w / 2, player.y + player.h / 2
 end
 
+local foods = {}
+
 function _init()
     physics:add(player)
     physics:add(floor, true)
@@ -63,24 +76,11 @@ function _init()
     enemies_and_bullets_init()
     events:register("camera_reset", function(offset)
         player.x -= offset
+        for _, food in ipairs(foods) do
+            food.x -= offset
+        end
         physics:rebuild()
     end)
-end
-
-function minimal_collision(x, y, w, h, x2, y2)
-    local earliest_t = 1
-    local xf, yf = x2, y2
-
-    ---@param other any
-    ---@param result HitResult
-    local function work(other, result)
-        if result.t < earliest_t then
-            earliest_t = result.t
-            xf, yf = result.tx, result.ty
-        end
-    end
-    physics:query(x, y, w, h, x2, y2, work)
-    return xf, yf
 end
 
 function update_player()
@@ -108,6 +108,22 @@ function update_player()
         player.last_jump_asked = -100
         player.vy = -jump_velocity
         player.jumps -= 1
+    end
+
+    local function minimal_collision(x, y, w, h, x2, y2)
+        local earliest_t = 1
+        local xf, yf = x2, y2
+
+        ---@param other any
+        ---@param result HitResult
+        local function work(other, result)
+            if result.t < earliest_t then
+                earliest_t = result.t
+                xf, yf = result.tx, result.ty
+            end
+        end
+        physics:query(x, y, w, h, x2, y2, work)
+        return xf, yf
     end
 
     --- do collision in two steps to allow sliding on walls
@@ -155,22 +171,69 @@ function take_damage()
     player.invincible = default_invincibility_time
 end
 
-local over = false
+local function spawn_foods()
+    if rnd() < 0.01 then
+        local food = {
+            x = player.x + rand_int(50, 150),
+            y = -10,
+            vy = 40,
+            w = 2,
+            h = 2,
+            kind = "food",
+        }
+        if rnd() < 0.2 then
+            food.kind = "bigfood"
+            food.vy = 20
+            food.w = 4
+            food.h = 4
+        end
+        add(foods, food)
+    end
+end
+
+function update_foods()
+    spawn_foods()
+    foods = filter(foods, function(food)
+        local ny = food.y + food.vy * delta_t
+        local hitany = false
+        physics:query(food.x, food.y, food.w, food.h, food.x, ny,
+        function(other, _)
+            if other == player then
+                if food.kind == "bigfood" then
+                    player.score += food_scores.bigfood
+                    sfx(sounds.eatbig, channels.sfx_1)
+                else
+                    player.score += food_scores.food
+                    sfx(sounds.eat, channels.sfx_1)
+                end
+            end
+            hitany = true
+        end)
+        if hitany then
+            return false
+        else
+            food.y = ny
+            return true
+        end
+    end)
+end
 
 function _update60()
-    if over then
+    if player.over then
         sfx(sounds._stop, 1)
         sfx(sounds._stop, 2)
         sfx(sounds._stop, 3)
         sfx(sounds._stop, 4)
         return
     end
+    
     update_buildings()
     update_player()
     update_bullets()
+    update_foods()
     -- player.hp = max(0, player.hp - 1)
     if player.hp <= 0 then
-        over = true
+        player.over = true
     end
 
     --- stopgap to prevent memory leaks
@@ -218,10 +281,14 @@ function _draw()
     end
     pal()
 
+    for _, food in ipairs(foods) do
+        sprite(food.kind, food.x, food.y)
+    end
+
     draw_bullets()
 
     --- queued draws
-    filter(queued_draws, function(f)
+    queued_draws = filter(queued_draws, function(f)
         local done = f()
         return not done
     end)
@@ -231,32 +298,36 @@ function _draw()
     camera()
 
     draw_sludge()
-    draw_hp()
+    draw_stats()
 
     draw_msg()
 
-    if over then
+    if player.over then
         printcentered("damn", 40, 8)
         printcentered("its over", 50, 8)
         return
     end
 end
 
-function draw_hp()
+function draw_stats()
     local gaps = { -1, 0, 1}
+
+    local hp_y = 2
+    player.displayed_score = min(player.displayed_score + 1, player.score)
+    print(zeropad(player.displayed_score, 5), 2, hp_y, 7)
+
     local hp_w = 5
-    local hp_x = 2
-    local hp_y = hp_x
-    local gap = 2
+    local x = 2 + 5 * 4 + 3
+
     for i = 1, player.hp do
         local dg = 0
-        if i == player.hp then
+        if i == player.hp then -- shake heart
             if player.invincible == 0 and player.on_sludge then
-                dg = gaps[flr(time() * 10) % 2 + 1]
+                dg = gaps[flr(time() * 9) % 2 + 1]
             end
         end
-        local x = hp_x + (i - 1) * (hp_w + gap) + dg
-        sprite("heart", x, hp_y)
+        sprite("heart", x + dg, hp_y)
+        x += hp_w + 2
     end
 end
 

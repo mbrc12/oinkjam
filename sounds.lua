@@ -3,6 +3,8 @@ sounds = {
     sludge = 1,
     hit = 2,
     heartloss = 4,
+    eat = 5,
+    eatbig = 6,
     _stop = -2,
 }
 
