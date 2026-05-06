@@ -5,7 +5,8 @@ sounds = {
     hit = {2, 0},
     heartloss = {4, 0},
     eat = {5, 0},
-    eatbig = {6, 0}
+    eatbig = {6, 0},
+    barrier = { 7, 0 },
 }
 
 

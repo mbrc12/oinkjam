@@ -1,4 +1,4 @@
----@alias EventType "camera_reset"
+---@alias EventType "camera_reset" | "hit_barrier"
 
 events = {
     ---@type table<EventType, (fun(...):boolean)[]>

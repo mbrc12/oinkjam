@@ -82,6 +82,10 @@ function _init()
         end
         physics:rebuild()
     end)
+    events:register("hit_barrier", function()
+        player.hp = 0
+        sound("barrier", false)
+    end)
 end
 
 function update_player()
@@ -118,6 +122,10 @@ function update_player()
         ---@param other any
         ---@param result HitResult
         local function work(other, result)
+            if other.barrier == true then
+                dbg("hit barrier")
+                events:trigger("hit_barrier")
+            end
             if result.t < earliest_t then
                 earliest_t = result.t
                 xf, yf = result.tx, result.ty
@@ -309,6 +317,7 @@ function _draw()
     draw_msg()
 
     if player.over then
+        cls()
         printcentered("damn", 40, 8)
         printcentered("its over", 50, 8)
         return
@@ -375,6 +384,7 @@ function draw_msg()
     print(msg, 2, 128 - 8, 1)
     msg2 = "" .. "f:" .. stat(7)
     msg2 = msg2 .. " j:" .. player.jumps
+    msg2 = msg2 .. " a:" .. add_time
     -- msg2 = msg2 .. " lj:" .. (round((time() - player.last_jump_asked) * 100) / 100)
     msg2 = msg2 .. " sc:" .. stat(2) .. " l+s:" .. stat(1)
     print(msg2, 2, 128 - 16, 1)

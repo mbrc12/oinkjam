@@ -1,2 +1,3 @@
 log start
-[06:47:54] init;
+[07:43:09] init;
+[07:43:20] hit barrier;
