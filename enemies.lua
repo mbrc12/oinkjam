@@ -100,13 +100,15 @@ function update_bullets()
                 end
                 anim("bullet_finish", t, bx - 4, by - 4, false)
                 pal()
+                return true
             end
             add(queued_draws, f)
             if injure then
                 sfx(sounds.hit, channels.sfx_1)
             end
         else
-            b.x, b.y = x2, y2
+            b.x = x2
+            b.y = y2
         end
 
         ::continue::

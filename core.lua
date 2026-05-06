@@ -183,7 +183,7 @@ local function spawn_foods()
         }
         if rnd() < 0.2 then
             food.kind = "bigfood"
-            food.vy = 20
+            food.vy = 30
             food.w = 4
             food.h = 4
         end
@@ -226,7 +226,6 @@ function _update60()
         sfx(sounds._stop, 4)
         return
     end
-    
     update_buildings()
     update_player()
     update_bullets()
@@ -242,7 +241,7 @@ end
 
 -----
 
----@type fun()[]
+---@type (fun():boolean)[]
 queued_draws = {}
 
 function _draw()
@@ -361,6 +360,7 @@ function draw_msg()
     print(msg, 2, 128 - 8, 0)
     msg2 = "" .. "f:" .. stat(7)
     msg2 = msg2 .. " j:" .. player.jumps
-    msg2 = msg2 .. " lj" .. (round((time() - player.last_jump_asked) * 100) / 100)
+    -- msg2 = msg2 .. " lj:" .. (round((time() - player.last_jump_asked) * 100) / 100)
+    msg2 = msg2 .. " sc:" .. stat(2) .. " l+s:" .. stat(1)
     print(msg2, 2, 128 - 16, 0)
 end
