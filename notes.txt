@@ -1,0 +1,8 @@
+1. wall behind, mix into sludge below
+2. particle system, more juice in general
+3. clouds and stars
+4. falling enemies
+5. revamped building system
+6. intro/ending screen
+7. fix food clustering
+8. revisit sound system, possibly fix sound clustering

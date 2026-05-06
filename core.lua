@@ -166,29 +166,33 @@ function update_player()
 end
 
 function take_damage()
-    -- player.hp -= 1
+    player.hp -= 1
     sound("heartloss", true)
     player.invincible = default_invincibility_time
 end
 
 local function spawn_food()
-    if rnd() < 0.01 then
+    local x = player.x + rand_int(50, 150)
+    setseed(flr((time() + x) % 10000))
+
+    if rnd() < 0.02 then
         local food = {
-            x = player.x + rand_int(50, 150),
+            x = x,
             y = -10,
-            vy = 40,
+            vy = rand_int(30, 60),
             w = 2,
             h = 2,
             kind = "food",
         }
         if rnd() < 0.2 then
             food.kind = "bigfood"
-            food.vy = 30
+            food.vy = rand_int(20, 40)
             food.w = 4
             food.h = 4
         end
         add(foods, food)
     end
+    unseed()
 end
 
 function update_foods()
@@ -197,18 +201,18 @@ function update_foods()
         local ny = food.y + food.vy * delta_t
         local hitany = false
         physics:query(food.x, food.y, food.w, food.h, food.x, ny,
-        function(other, _)
-            if other == player then
-                if food.kind == "bigfood" then
-                    player.score += food_scores.bigfood
-                    sound("eatbig", true)
-                else
-                    player.score += food_scores.food
-                    sound("eat", true)
+            function(other, _)
+                if other == player then
+                    if food.kind == "bigfood" then
+                        player.score += food_scores.bigfood
+                        sound("eatbig", true)
+                    else
+                        player.score += food_scores.food
+                        sound("eat", true)
+                    end
                 end
-            end
-            hitany = true
-        end)
+                hitany = true
+            end)
         if hitany then
             return false
         else
@@ -306,14 +310,19 @@ function _draw()
 end
 
 function draw_stats()
-    local gaps = { -1, 0, 1}
+    local gaps = { -1, 0, 1 }
 
-    local hp_y = 2
-    player.displayed_score = min(player.displayed_score + 1, player.score)
-    print(zeropad(player.displayed_score, 5), 2, hp_y, 7)
-
+    local hp_y = 128 - 8
     local hp_w = 5
-    local x = 2 + 5 * 4 + 3
+    local gap = 2
+    local score_sz = 4 * 5 + 2
+
+    -- local x = 2 + 5 * 4 + 3
+    local x = 128 - score_sz - (hp_w + gap) * 3
+    player.displayed_score = min(player.displayed_score + 1, player.score)
+    print(zeropad(player.displayed_score, 5), x, hp_y, 7)
+    x += score_sz
+
 
     for i = 1, player.hp do
         local dg = 0
@@ -323,7 +332,7 @@ function draw_stats()
             end
         end
         sprite("heart", x + dg, hp_y)
-        x += hp_w + 2
+        x += hp_w + gap
     end
 end
 
@@ -357,10 +366,10 @@ function draw_msg()
     msg = msg .. " m:" .. round(stat(0))
     msg = msg .. " b: " .. #buildings
     msg = msg .. " p:" .. mapsize(physics.items)
-    print(msg, 2, 128 - 8, 0)
+    print(msg, 2, 128 - 8, 1)
     msg2 = "" .. "f:" .. stat(7)
     msg2 = msg2 .. " j:" .. player.jumps
     -- msg2 = msg2 .. " lj:" .. (round((time() - player.last_jump_asked) * 100) / 100)
     msg2 = msg2 .. " sc:" .. stat(2) .. " l+s:" .. stat(1)
-    print(msg2, 2, 128 - 16, 0)
+    print(msg2, 2, 128 - 16, 1)
 end
