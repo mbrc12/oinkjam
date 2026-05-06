@@ -104,7 +104,7 @@ function update_bullets()
             end
             add(queued_draws, f)
             if injure then
-                sfx(sounds.hit, channels.sfx_1)
+                sound("hit", true)
             end
         else
             b.x = x2

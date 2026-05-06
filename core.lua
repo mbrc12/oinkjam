@@ -132,7 +132,7 @@ function update_player()
     local sx2, sy2 = minimal_collision(sx, sy, player.w, player.h, sx, y2)
     if player.vy > 0 and abs(sy2 - player.y) < epsilon then
         if not player.grounded then
-            sfx(sounds.land, 1)
+            sound("land", false)
         end
         player.grounded = true
         player.jumps = 2
@@ -149,9 +149,9 @@ function update_player()
     player.on_sludge = physics:intersects(player, floor, 0.1)
 
     if player.on_sludge and not was_on_sludge then
-        sfx(sounds.sludge, channels.sfx_2)
+        sound("sludge", true)
     elseif not player.on_sludge and was_on_sludge then
-        sfx(sounds._stop, channels.sfx_2)
+        stopsound("sludge")
     end
 
     if player.on_sludge and not (player.invincible > 0) then
@@ -166,8 +166,8 @@ function update_player()
 end
 
 function take_damage()
-    player.hp -= 1
-    sfx(sounds.heartloss, channels.sfx_1)
+    -- player.hp -= 1
+    sound("heartloss", true)
     player.invincible = default_invincibility_time
 end
 
@@ -201,10 +201,10 @@ function update_foods()
             if other == player then
                 if food.kind == "bigfood" then
                     player.score += food_scores.bigfood
-                    sfx(sounds.eatbig, channels.sfx_1)
+                    sound("eatbig")
                 else
                     player.score += food_scores.food
-                    sfx(sounds.eat, channels.sfx_1)
+                    sound("eat")
                 end
             end
             hitany = true
@@ -220,10 +220,7 @@ end
 
 function _update60()
     if player.over then
-        sfx(sounds._stop, 1)
-        sfx(sounds._stop, 2)
-        sfx(sounds._stop, 3)
-        sfx(sounds._stop, 4)
+        silence()
         return
     end
     update_buildings()
@@ -352,7 +349,7 @@ end
 function draw_msg()
     local msg = "" .. round(player.x)
     -- local time_since_grounded = time() - player.last_grounded
-    -- msg = msg .. "g:" .. (player.grounded and "t" or "f") .. " gt: " .. round(time_since_grounded) / 100
+    msg = msg .. "g:" .. (player.grounded and "t" or "f") --.. " gt: " .. round(time_since_grounded) / 100
     -- msg = msg .. " b:" .. mapsize(bullets)
     msg = msg .. " m:" .. round(stat(0))
     msg = msg .. " b: " .. #buildings
