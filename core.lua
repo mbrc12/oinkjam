@@ -13,7 +13,7 @@ flat_building_chance = 0.3
 jump_forgive_time = 0.1
 jump_velocity = 150
 
-sludge_max_limit = 1
+sludge_max_limit = 0.5
 
 default_invincibility_time = 1
 
@@ -74,6 +74,7 @@ function _init()
     events:init()
     buildings_init()
     enemies_and_bullets_init()
+    environment_init()
     events:register("camera_reset", function(offset)
         player.x -= offset
         for _, food in ipairs(foods) do
@@ -163,6 +164,7 @@ function update_player()
     end
 
     physics:add(player)
+
 end
 
 function take_damage()
@@ -196,7 +198,9 @@ local function spawn_food()
 end
 
 function update_foods()
-    spawn_food()
+    if #foods < 5 then
+        spawn_food()
+    end
     foods = filter(foods, function(food)
         local ny = food.y + food.vy * delta_t
         local hitany = false
@@ -231,6 +235,7 @@ function _update60()
     update_player()
     update_bullets()
     update_foods()
+    update_environment()
     -- player.hp = max(0, player.hp - 1)
     if player.hp <= 0 then
         player.over = true
@@ -240,13 +245,13 @@ function _update60()
     physics:rebuild()
 end
 
------
+-------------------------------------------------------------
 
 ---@type (fun():boolean)[]
 queued_draws = {}
 
 function _draw()
-    camera_move(player.x - 20, 1)
+    camera_move(player.x - 30, 1)
 
     cls(0)
 
@@ -277,7 +282,7 @@ function _draw()
     if abs(player.vx) < epsilon then
         sprite("player", player.x, player.y, player.flip)
     else
-        anim("player_run", t, 20 + camera_offset(1), player.y, player.flip)
+        anim("player_run", t, player.x, player.y, player.flip)
     end
     pal()
 
@@ -294,6 +299,7 @@ function _draw()
     end)
 
     -- physics:draw(false)
+    draw_environment()
 
     camera()
 

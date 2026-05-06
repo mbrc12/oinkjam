@@ -1,4 +1,3 @@
--- local camera_speed = 0.05
 local camera_reset_threshold = 600
 local camera_default_x = 0
 
@@ -10,7 +9,10 @@ local cameras = {
 ---@param n? number camera layer
 function camera_move(x, n)
     n = n or 1
+    camera_speed = 0.1
+    -- cameras[n] = round(cameras[n] * (1 - camera_speed) + x * camera_speed)
     cameras[n] = round(x)
+
     if cameras[n] < camera_reset_threshold then
         return
     end

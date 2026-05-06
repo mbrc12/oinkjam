@@ -12,6 +12,9 @@ local sprites = {
 
     parachute = { idx = 16 },
     dirt_monster = { idx = 64, w = 2, h = 2 },
+
+    barrier = { idx = 29 },
+    barriertail = { idx = 45 }
 }
 
 ---@enum (key) Anim
