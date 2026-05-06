@@ -131,9 +131,9 @@ function update_player()
     local sx, sy = minimal_collision(player.x, player.y, player.w, player.h, x2, player.y)
     local sx2, sy2 = minimal_collision(sx, sy, player.w, player.h, sx, y2)
     if player.vy > 0 and abs(sy2 - player.y) < epsilon then
-        if not player.grounded then
-            sound("land", false)
-        end
+        -- if not player.grounded then
+        --     sound("land", false)
+        -- end
         player.grounded = true
         player.jumps = 2
         player.last_grounded = time()
@@ -171,7 +171,7 @@ function take_damage()
     player.invincible = default_invincibility_time
 end
 
-local function spawn_foods()
+local function spawn_food()
     if rnd() < 0.01 then
         local food = {
             x = player.x + rand_int(50, 150),
@@ -192,7 +192,7 @@ local function spawn_foods()
 end
 
 function update_foods()
-    spawn_foods()
+    spawn_food()
     foods = filter(foods, function(food)
         local ny = food.y + food.vy * delta_t
         local hitany = false
@@ -201,10 +201,10 @@ function update_foods()
             if other == player then
                 if food.kind == "bigfood" then
                     player.score += food_scores.bigfood
-                    sound("eatbig")
+                    sound("eatbig", true)
                 else
                     player.score += food_scores.food
-                    sound("eat")
+                    sound("eat", true)
                 end
             end
             hitany = true
@@ -328,26 +328,29 @@ function draw_stats()
 end
 
 function draw_sludge()
-    local sludge_color = 13
+    local sludge_color = 0
+    local sludge_color_border = 5
 
-    local wavelength = { 600, 120, 60 } -- camera offset divisible by wavelength
-    local period = { 17, 7, 3 }
-    local amp = { 5, 3, 1.5 }
+    local wavelength = { 50, 30, 20 } -- camera offset divisible by wavelength
+    local period = { 7, 3, 1 }
+    local amp = { 4, 2, 1 }
 
     for x = 0, 128 do
         local lx = x + camera_offset(1)
         local val = 0
         for i = 1, #wavelength do
-            local cur = sin(2 * 3.14 * (lx / wavelength[i] - time() / period[i]))
+            local cur = sin(2 * (lx / wavelength[i] - time() / period[i]))
             val = val + (1 + cur) * amp[i]
         end
         local y = flr(val / 3)
-        line(x, floor_y - y, x, 128, sludge_color)
+        local sy = floor_y - y
+        line(x, sy, x, 128, sludge_color)
+        line(x, sy, x, sy + 2, sludge_color_border)
     end
 end
 
 function draw_msg()
-    local msg = "" .. round(player.x)
+    local msg = "" .. round(player.x) .. " co:" .. camera_offset(1)
     -- local time_since_grounded = time() - player.last_grounded
     msg = msg .. "g:" .. (player.grounded and "t" or "f") --.. " gt: " .. round(time_since_grounded) / 100
     -- msg = msg .. " b:" .. mapsize(bullets)
