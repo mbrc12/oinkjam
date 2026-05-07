@@ -42,7 +42,12 @@ function update_environment()
     else
         add_time_proposed = add_time
     end
-    add_time = add_time * (1 - ema) + (add_time_proposed * 1.1) * ema
+    -- add_time = add_time * (1 - ema) + (add_time_proposed * 1.1) * ema
+    local change = add_time - add_time_proposed
+    if change < 0.1 then
+        change = 0
+    end
+    add_time = add_time - change * ema
 
     update_body()
     physics:add(barrier, true)

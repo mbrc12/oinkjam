@@ -386,6 +386,6 @@ function draw_msg()
     msg2 = msg2 .. " j:" .. player.jumps
     msg2 = msg2 .. " a:" .. add_time
     -- msg2 = msg2 .. " lj:" .. (round((time() - player.last_jump_asked) * 100) / 100)
-    msg2 = msg2 .. " sc:" .. stat(2) .. " l+s:" .. stat(1)
+    msg2 = msg2 .. " l+s:" .. stat(1)
     print(msg2, 2, 128 - 16, 1)
 end
