@@ -1,2 +1,0 @@
-log start
-[05:53:48] init;
