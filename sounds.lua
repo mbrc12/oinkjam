@@ -6,7 +6,7 @@ sounds = {
     heartloss = {4, 0},
     eat = {5, 0},
     eatbig = {6, 0},
-    barrier = { 7, 0 },
+    done = { 7, 0 },
 }
 
 
@@ -23,6 +23,12 @@ function sound(name, interrupt)
             sfx(key, chan) -- play
         end
     end
+end
+
+function isplaying(name)
+    local key = sounds[name][1]
+    local chan = sounds[name][2]
+    return stat(46+chan) == key
 end
 
 ---@param name Sounds

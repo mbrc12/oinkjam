@@ -84,7 +84,6 @@ function _init()
     end)
     events:register("hit_barrier", function()
         player.hp = 0
-        sound("barrier", false)
     end)
 end
 
@@ -176,7 +175,7 @@ function update_player()
 end
 
 function take_damage()
-    player.hp -= 1
+    -- player.hp -= 1
     sound("heartloss", true)
     player.invincible = default_invincibility_time
 end
@@ -206,7 +205,7 @@ local function spawn_food()
 end
 
 function update_foods()
-    if #foods < 5 then
+    if #foods < 3 then
         spawn_food()
     end
     foods = filter(foods, function(food)
@@ -234,12 +233,17 @@ function update_foods()
     end)
 end
 
+local sound_played = false
+
 function _update60()
     if player.over then
-        silence()
+        if not sound_played then
+            sound("done", false)
+            sound_played = true
+        end
         return
     end
-    update_buildings()
+    -- update_buildings()
     update_player()
     update_bullets()
     update_foods()
@@ -269,7 +273,7 @@ function _draw()
 
     camera_enable(1)
 
-    draw_buildings()
+    -- draw_buildings()
 
     local t = time()
 
