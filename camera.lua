@@ -10,7 +10,6 @@ local cameras = {
 function camera_move(x, n)
     n = n or 1
     camera_speed = 0.1
-    -- cameras[n] = round(cameras[n] * (1 - camera_speed) + x * camera_speed)
     cameras[n] = round(x)
 
     if cameras[n] < camera_reset_threshold then

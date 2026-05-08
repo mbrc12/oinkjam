@@ -116,3 +116,7 @@ function addmany(t, items)
         add(t, v)
     end
 end
+
+function aeq(a, b)
+    return abs(a - b) < epsilon
+end
